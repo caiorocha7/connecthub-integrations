@@ -1,0 +1,138 @@
+name: ${COMPOSE_PROJECT_NAME:-connecthub}
+
+x-backend-env: &backend-env
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-connecthub}:${POSTGRES_PASSWORD:-connecthub_dev_password}@postgres:5432/${POSTGRES_DB:-connecthub}
+  REDIS_URL: redis://redis:6379/0
+  SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-6f1d0c1e9a7b4e2f8c3d5a1b7e9f0a2c}
+  FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
+  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+  REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8130}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4230,http://localhost:4200}
+  MAX_PAYLOAD_BYTES: ${MAX_PAYLOAD_BYTES:-262144}
+  SIGNATURE_TOLERANCE_SECONDS: ${SIGNATURE_TOLERANCE_SECONDS:-300}
+  SSRF_ALLOWED_HOSTS: ${SSRF_ALLOWED_HOSTS:-simulator}
+  RETRY_BASE_SECONDS: ${RETRY_BASE_SECONDS:-2}
+  RETRY_MAX_SECONDS: ${RETRY_MAX_SECONDS:-300}
+  DEFAULT_MAX_ATTEMPTS: ${DEFAULT_MAX_ATTEMPTS:-5}
+  OUTBOX_RELAY_INTERVAL_SECONDS: ${OUTBOX_RELAY_INTERVAL_SECONDS:-2}
+  DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@example.com}
+  DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-Demo@12345}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-connecthub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-connecthub_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-connecthub}
+    ports:
+      - "${CH_POSTGRES_PORT:-5442}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-connecthub} -d ${POSTGRES_DB:-connecthub}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${CH_REDIS_PORT:-6392}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: ./backend
+    command: ["sh", "-c", "alembic upgrade head && python -m app.seed"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+    environment: *backend-env
+    ports:
+      - "${CH_API_PORT:-8130}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: ../worker/Dockerfile
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.worker.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 | grep -q pong"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: ../worker/Dockerfile
+    command: ["celery", "-A", "app.worker.celery_app", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  simulator:
+    build:
+      context: ./simulator
+    ports:
+      - "${CH_SIMULATOR_PORT:-8131}:8131"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8131/health', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${CH_FRONTEND_PORT:-4230}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+      simulator:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
