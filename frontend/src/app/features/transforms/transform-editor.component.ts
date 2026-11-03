@@ -297,7 +297,7 @@ function literalToText(value: unknown): string {
         flex-wrap: wrap;
       }
       .mapping-opts select,
-      .mapping-opts input:not([type="checkbox"]) {
+      .mapping-opts input:not([type='checkbox']) {
         width: auto;
         min-width: 120px;
         flex: 1;

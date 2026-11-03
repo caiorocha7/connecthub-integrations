@@ -100,9 +100,7 @@ describe('AuthService + authInterceptor', () => {
     auth.accessToken.set('acc');
     http.get('/sim-api/control').subscribe();
     http.post('/api/v1/auth/login', {}).subscribe();
-    expect(backend.expectOne('/sim-api/control').request.headers.has('Authorization')).toBe(
-      false,
-    );
+    expect(backend.expectOne('/sim-api/control').request.headers.has('Authorization')).toBe(false);
     expect(backend.expectOne('/api/v1/auth/login').request.headers.has('Authorization')).toBe(
       false,
     );
