@@ -1,0 +1,11 @@
+{
+  "/api": { "target": "http://localhost:8130", "secure": false, "changeOrigin": true },
+  "/docs": { "target": "http://localhost:8130", "secure": false, "changeOrigin": true },
+  "/openapi.json": { "target": "http://localhost:8130", "secure": false, "changeOrigin": true },
+  "/sim-api": {
+    "target": "http://localhost:8131",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/sim-api": "" }
+  }
+}
