@@ -1,6 +1,6 @@
 # ConnectHub — Plataforma de Integrações
 
-[![CI](https://github.com/OWNER/connecthub-integrations/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/connecthub-integrations/actions/workflows/ci.yml)
+[![CI](https://github.com/caiorocha7/connecthub-integrations/actions/workflows/ci.yml/badge.svg)](https://github.com/caiorocha7/connecthub-integrations/actions/workflows/ci.yml)
 
 O **ConnectHub** recebe webhooks de sistemas externos, valida a autenticidade de cada um, transforma o JSON
 de forma configurável e o entrega a um ou mais destinos HTTP. As entregas são **assíncronas**, **idempotentes**,
@@ -71,7 +71,7 @@ claim/lock de entregas, retentativas classificadas por tipo de erro, histórico 
 | Banco | PostgreSQL 16 (fonte da verdade de todo o estado) |
 | Simulador | FastAPI (serviço separado) |
 | Infra | Docker, Docker Compose (healthchecks, volumes, migrations), Nginx (SPA + reverse proxy), GitHub Actions |
-| Qualidade | Pytest (62 testes, 89% de cobertura no backend), Vitest (frontend), Ruff, mypy `--strict`, Prettier, smoke de navegador (puppeteer) |
+| Qualidade | Pytest (62 testes, 89% de cobertura no backend), Vitest (frontend), Ruff, mypy `--strict`, Prettier; smoke de navegador (Puppeteer) validado localmente |
 
 ## Arquitetura
 
@@ -151,7 +151,7 @@ sequenceDiagram
 **Pré-requisitos:** Docker com Compose v2. Para rodar os testes fora de containers: Python 3.12 e Node 22.
 
 ```bash
-git clone https://github.com/OWNER/connecthub-integrations.git
+git clone https://github.com/caiorocha7/connecthub-integrations.git
 cd connecthub-integrations
 cp .env.example .env              # valores apenas para desenvolvimento
 docker compose up -d --build --wait
@@ -214,7 +214,7 @@ de desenvolvimento.
 | Frontend (Vitest via `ng test`) | `cd frontend && npm run test:ci` | **16 passaram** |
 | Frontend (formato, tipos, build) | `npm run format:check && npm run typecheck && npm run build` | ok |
 | End-to-end de resiliência (stack Docker real) | `python tests/e2e/demo_scenario.py` | **10 passos + bônus ok** |
-| Smoke de UI em navegador (Chrome headless) | `cd tests/e2e && npm i && node ui_smoke.mjs` | todas as telas sem erros de console/API |
+| Smoke de UI em navegador (Chrome headless, **apenas local**) | `cd tests/e2e && npm i && node ui_smoke.mjs` | validado localmente: todas as telas sem erros de console/API |
 
 Os testes do backend criam e migram o banco `connecthub_test` automaticamente. Use `TEST_DATABASE_URL` e
 `REDIS_URL` para apontar para outra instância. O que é coberto:
@@ -233,9 +233,11 @@ Os testes do backend criam e migram o banco `connecthub_test` automaticamente. U
 - histórico, filtros, paginação, mascaramento e métricas do dashboard;
 - SSRF no cadastro e no momento da entrega.
 
-A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso em push e pull request. Ela usa
-PostgreSQL e Redis como services, sobe a stack completa via Docker Compose e executa o cenário de resiliência.
-Qualquer falha reprova o pipeline.
+A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda em push e pull request quatro jobs: **backend**
+(lint, tipos, `alembic check` e testes com PostgreSQL e Redis como services), **frontend** (formato, tipos, testes
+e build), **simulador** (lint e testes) e **E2E** (sobe a stack completa via Docker Compose e executa o cenário
+de resiliência). Qualquer falha reprova o pipeline. O smoke visual com Chrome/Puppeteer (`tests/e2e/ui_smoke.mjs`)
+**não faz parte da CI**: ele depende de um Chrome instalado e foi validado localmente.
 
 ## Reproduzir falhas e recuperação
 
