@@ -12,7 +12,7 @@ docker compose up -d --build --wait
 ```
 
 Para acelerar a demonstração, o `.env.example` usa `RETRY_BASE_SECONDS=2`. Com isso as retentativas acontecem em
-segundos (≈1–2 s, 2–4 s, 4–8 s…), com o teto definido por `RETRY_MAX_SECONDS`.
+segundos (≈1 a 2 s, 2 a 4 s, 4 a 8 s…), com o teto definido por `RETRY_MAX_SECONDS`.
 
 ## Opção A: script automatizado
 

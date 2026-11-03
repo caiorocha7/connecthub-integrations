@@ -7,8 +7,8 @@
 | **API** | `backend/app` | Autenticação, autorização multi-tenant, CRUDs, ingestão pública, histórico, dashboard, replay. Nunca faz entregas HTTP. |
 | **Worker** | `backend/app/worker` + `worker/Dockerfile` | Processo Celery independente: executa entregas HTTP, classifica erros e agenda retentativas. |
 | **Beat** | mesmo código, comando `celery beat` | Agenda o relay do outbox (2 s) e o job de recuperação (30 s). |
-| **PostgreSQL** | — | Fonte da verdade: eventos, entregas, tentativas, outbox, auditoria. |
-| **Redis** | — | Broker Celery. É transporte, não estado: perder o Redis atrasa, mas não perde entregas. |
+| **PostgreSQL** | - | Fonte da verdade: eventos, entregas, tentativas, outbox, auditoria. |
+| **Redis** | - | Broker Celery. É transporte, não estado: perder o Redis atrasa, mas não perde entregas. |
 | **Simulador** | `simulator/` | Destino HTTP controlável para demonstrar falhas. |
 | **Frontend** | `frontend/` | SPA Angular servida por nginx, que também faz reverse proxy de `/api` e `/sim-api`. |
 

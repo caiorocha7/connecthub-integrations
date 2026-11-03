@@ -1,4 +1,4 @@
-# ConnectHub — Plataforma de Integrações
+# ConnectHub | Plataforma de Integrações
 
 [![CI](https://github.com/caiorocha7/connecthub-integrations/actions/workflows/ci.yml/badge.svg)](https://github.com/caiorocha7/connecthub-integrations/actions/workflows/ci.yml)
 
@@ -130,7 +130,7 @@ sequenceDiagram
         A--)R: publica mensagens (background, best effort)
     else duplicado
         A->>P: duplicate_count += 1
-        A-->>S: 200 {duplicate: true} — nenhuma entrega nova
+        A-->>S: 200 {duplicate: true}, nenhuma entrega nova
     end
     Note over R,P: se o Redis estiver fora, o outbox fica PENDING e o beat republica
     R->>W: deliver(delivery_id)

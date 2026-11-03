@@ -25,7 +25,7 @@ Este documento resume os contratos principais.
 | POST | `/auth/login` | `{email, password}` | `200` `{access_token, refresh_token, token_type, expires_in}` |
 | POST | `/auth/refresh` | `{refresh_token}` | `200` novo par; o token antigo é revogado (rotação) |
 | POST | `/auth/logout` | `{refresh_token}` | `204` (revoga o refresh token) |
-| GET | `/auth/me` | — | usuário + vínculos (`memberships[]` com `role`) |
+| GET | `/auth/me` | - | usuário + vínculos (`memberships[]` com `role`) |
 | PATCH | `/auth/me` | `{full_name}` | perfil atualizado |
 | POST | `/auth/change-password` | `{current_password, new_password}` | `204` (revoga todas as sessões) |
 
