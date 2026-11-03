@@ -1,0 +1,7 @@
+{
+  "name": "connecthub-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": { "ui-smoke": "node ui_smoke.mjs" },
+  "devDependencies": { "puppeteer-core": "24.10.0" }
+}
